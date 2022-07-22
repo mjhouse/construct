@@ -61,8 +61,8 @@ magic comments in the output obj file, but the non-comment information should be
 
 Building codes are generally published and sold by state (as an example - [Alabama](https://dcm.alabama.gov/bldg_code.aspx#BC)). 
 I'll need to buy one of the books and read it to figure out how to turn it into some sort of structured set of rules. As the project 
-progresses, I'll have to acquire more. The rules should be in some external file formate (not hard coded) so that you can swap them 
-out buy year or state pretty easily.
+progresses, I'll have to acquire more. The rules should be in some external file format (not hard coded) so that you can swap them 
+out by year or state pretty easily.
 
 ## Connection Solver
 
