@@ -1,7 +1,6 @@
 use crate::geometry::*;
 use crate::geometry::{Transform,Matrix};
-
-pub type Index = usize;
+use crate::constant::Index;
 
 #[derive(Default,Debug,Clone)]
 pub struct Triangle {
@@ -55,9 +54,9 @@ mod tests {
     #[test]
     fn test_triangle_normal() {
         let data = vec![
-            Vertex::new(0,0,0),
-            Vertex::new(1,0,0),
-            Vertex::new(0,1,0),
+            Vertex::new(0.0,0.0,0.0),
+            Vertex::new(1.0,0.0,0.0),
+            Vertex::new(0.0,1.0,0.0),
         ];
 
         let f = Face::new(1,2,3);

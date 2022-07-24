@@ -11,4 +11,4 @@ pub use vector::{Vector,Vertex,Normal};
 pub use triangle::Triangle;
 pub use geometry::Geometry;
 pub use transform::Transform;
-pub use matrix::Matrix;
+pub use matrix::{Matrix,MatrixType};

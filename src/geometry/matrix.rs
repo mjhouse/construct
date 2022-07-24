@@ -8,6 +8,13 @@ pub struct Matrix {
     data: Data,
 }
 
+#[derive(Debug,Copy,Clone)]
+pub enum MatrixType {
+    Scale,
+    Rotate,
+    Translate,
+}
+
 impl Matrix {
 
     pub fn new<T: Into<f64> + Copy>(v: [T;16]) -> Self {
@@ -36,10 +43,10 @@ impl Matrix {
 
     pub fn translate(x: f64, y: f64, z: f64) -> Self {
         Self::new([
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-              x,   y,   z, 1.0,
+            1.0, 0.0, 0.0,   x,
+            0.0, 1.0, 0.0,   y,
+            0.0, 0.0, 1.0,   z,
+            0.0, 0.0, 0.0, 1.0,
         ])
     }
 
@@ -80,6 +87,14 @@ impl Matrix {
         Self::rotate_x(x) *
         Self::rotate_y(y) * 
         Self::rotate_z(z)
+    }
+
+    pub fn matching(v: MatrixType, x: f64, y: f64, z: f64) -> Self {
+        match v {
+            MatrixType::Scale => Self::scale(x,y,z),
+            MatrixType::Rotate => Self::rotate(x,y,z),
+            MatrixType::Translate => Self::translate(x,y,z),
+        }
     }
 
 }
@@ -258,9 +273,9 @@ mod tests {
     fn test_scaling_matrix() {
         // vertex data to transform
         let vertices = vec![
-            Vertex::new(0,0,0),
-            Vertex::new(3,0,0),
-            Vertex::new(0,2,0),
+            Vertex::new(0.0,0.0,0.0),
+            Vertex::new(3.0,0.0,0.0),
+            Vertex::new(0.0,2.0,0.0),
         ];
 
         // a face that references the data
@@ -286,6 +301,107 @@ mod tests {
         fassert_eq!(triangle.p3.x,0.0);
         fassert_eq!(triangle.p3.y,2.246);
         fassert_eq!(triangle.p3.z,0.0);
+    }
+
+    #[test]
+    fn test_rotate_x() {
+        // vertex data to transform
+        let mut vertex = Vertex::new(1.0,2.0,3.0);
+
+        // a rotation matrix with angle in radians
+        let matrix = Matrix::rotate_x(1.0);
+
+        vertex.transform(&matrix);
+
+        // using: https://keisan.casio.com/exec/system/15362817755710
+        fassert_eq!(vertex.y,-1.4438083426874098);
+        fassert_eq!(vertex.z,3.3038488872202123);
+    }
+
+    #[test]
+    fn test_rotate_y() {
+        // vertex data to transform
+        let mut vertex = Vertex::new(1.0,2.0,3.0);
+
+        // a rotation matrix with angle in radians
+        let matrix = Matrix::rotate_y(1.0);
+
+        vertex.transform(&matrix);
+
+        // using: https://keisan.casio.com/exec/system/15362817755710
+        fassert_eq!(vertex.x,3.064715260291829);
+        fassert_eq!(vertex.z,0.7794359327965228);
+    }
+
+    #[test]
+    fn test_rotate_z() {
+        // vertex data to transform
+        let mut vertex = Vertex::new(1.0,2.0,3.0);
+
+        // a rotation matrix with angle in radians
+        let matrix = Matrix::rotate_z(1.0);
+
+        vertex.transform(&matrix);
+
+        // using: https://keisan.casio.com/exec/system/15362817755710
+        fassert_eq!(vertex.x,-1.1426396637476532);
+        fassert_eq!(vertex.y,1.922075596544176);
+    }
+
+    #[test]
+    fn test_rotate_series() {
+        // vertex data to transform
+        let mut vertex = Vertex::new(1.0,2.0,3.0);
+
+        // a rotation matrix with angle in radians
+        let a = Matrix::rotate_x(1.0);
+        let b = Matrix::rotate_y(1.0);
+        let c = Matrix::rotate_z(1.0);
+
+        vertex.transform(&a);
+        vertex.transform(&b);
+        vertex.transform(&c);
+
+        // using: https://keisan.casio.com/exec/system/15362817755710
+        fassert_eq!(vertex.x,3.008940055606576);
+        fassert_eq!(vertex.y,2.013923311660526);
+        fassert_eq!(vertex.z,0.9436061871970718);
+    }
+
+    #[test]
+    fn test_rotate_combined() {
+        // vertex data to transform
+        let mut vertex = Vertex::new(1.0,2.0,3.0);
+
+        // a rotation matrix with angle in radians
+        let a = Matrix::rotate_x(1.0);
+        let b = Matrix::rotate_y(1.0);
+        let c = Matrix::rotate_z(1.0);
+
+        let m = a * b * c;
+
+        vertex.transform(&m);
+
+        // using: https://keisan.casio.com/exec/system/15362817755710
+        fassert_eq!(vertex.x,1.9070421093244363);
+        fassert_eq!(vertex.y,-1.134517035937589);
+        fassert_eq!(vertex.z,3.0126502432958917);
+    }
+
+    #[test]
+    fn test_rotate_combined_shortcut() {
+        // vertex data to transform
+        let mut vertex = Vertex::new(1.0,2.0,3.0);
+
+        // a rotation matrix with angle in radians
+        let m = Matrix::rotate(1.0,1.0,1.0);
+
+        vertex.transform(&m);
+
+        // using: https://keisan.casio.com/exec/system/15362817755710
+        fassert_eq!(vertex.x,1.9070421093244363);
+        fassert_eq!(vertex.y,-1.134517035937589);
+        fassert_eq!(vertex.z,3.0126502432958917);
     }
 
 }

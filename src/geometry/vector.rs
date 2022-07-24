@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::Sub;
+use std::ops::{Sub,Mul};
 use std::convert::TryFrom;
 
 use crate::utilities;
@@ -7,7 +7,7 @@ use crate::geometry::{Transform,Matrix};
 use crate::errors::Error;
 use crate::constant::VERTEX_TAG;
 
-#[derive(Default,Debug,Clone)]
+#[derive(Default,Debug,Copy,Clone)]
 pub struct Vector {
     pub x: f64,
     pub y: f64,
@@ -29,13 +29,33 @@ impl Sub for Vector {
     }
 }
 
+impl Mul<f64> for Vector {
+    type Output = Self;
+
+    fn mul(self, other: f64) -> Self::Output {
+        Self {
+            x: self.x * other,
+            y: self.y * other,
+            z: self.z * other,
+        }
+    }
+}
+
 impl Vector {
 
-    pub fn with<T: Into<f64>>((x,y,z): (T,T,T)) -> Self {
-        Self::new(x,y,z)
+    pub const fn new(x: f64, y: f64, z: f64) -> Self {
+        Self { 
+            x: x, 
+            y: y, 
+            z: z
+        }
     }
-    
-    pub fn new<T: Into<f64>>(x: T, y: T, z: T) -> Self {
+
+    pub fn with<T: Into<f64>>((x,y,z): (T,T,T)) -> Self {
+        Self::make(x,y,z)
+    }
+
+    pub fn make<T: Into<f64>>(x: T, y: T, z: T) -> Self {
         Self { 
             x: x.into(), 
             y: y.into(), 
@@ -143,7 +163,7 @@ mod tests {
     #[test]
     fn test_string_from_vector_int() {
         let data = "v 1 5 9".to_string();
-        let vector = Vector::new(1,5,9);
+        let vector = Vector::new(1.0,5.0,9.0);
         assert_eq!(String::from(vector),data);
     }
 
@@ -182,14 +202,14 @@ mod tests {
 
     #[test]
     fn test_vector_magnitude() {
-        let vector = Vector::new(1,2,2);
+        let vector = Vector::new(1.0,2.0,2.0);
         let result = vector.magnitude();
         assert_eq!(result as u64,3);
     }
 
     #[test]
     fn test_vector_normalize() {
-        let vector = Vector::new(1,2,2);
+        let vector = Vector::new(1.0,2.0,2.0);
         let result = vector.normalize();
 
         // capture the first 4 trailing digits
@@ -206,8 +226,8 @@ mod tests {
 
     #[test]
     fn test_vector_sub() {
-        let vector1 = Vector::new(2,2,2);
-        let vector2 = Vector::new(1,1,1);
+        let vector1 = Vector::new(2.0,2.0,2.0);
+        let vector2 = Vector::new(1.0,1.0,1.0);
         let vector3 = vector1 - vector2;
 
         assert_eq!(vector3.x,1.0);

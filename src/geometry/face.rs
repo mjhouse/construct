@@ -3,9 +3,7 @@ use std::convert::TryFrom;
 use crate::utilities;
 use crate::geometry::*;
 use crate::errors::Error;
-use crate::constant::FACE_TAG;
-
-pub type Index = usize;
+use crate::constant::{FACE_TAG,Index};
 
 #[derive(Default,Debug,Clone)]
 pub struct Face {
@@ -17,20 +15,25 @@ pub struct Face {
 impl Face {
 
     // Assumes that values given are 1-indexed
-    pub fn with(v: (usize,usize,usize)) -> Self {
-        Self {
-            a: v.0.saturating_sub(1),
-            b: v.1.saturating_sub(1),
-            c: v.2.saturating_sub(1),
-        }
-    }
-
-    // Assumes that values given are 1-indexed
-    pub fn new(a: usize, b: usize, c: usize) -> Self {
+    pub const fn new(a: usize, b: usize, c: usize) -> Self {
         Self { 
             a: a.saturating_sub(1),
             b: b.saturating_sub(1),
             c: c.saturating_sub(1),
+        }
+    }
+
+    // Assumes that values given are 1-indexed
+    pub fn with<T: Into<usize>>((a,b,c): (T,T,T)) -> Self {
+        Self::make(a,b,c)
+    }
+
+    // Assumes that values given are 1-indexed
+    pub fn make<T: Into<usize>>(a: T, b: T, c: T) -> Self {
+        Self {
+            a: a.into().saturating_sub(1),
+            b: b.into().saturating_sub(1),
+            c: c.into().saturating_sub(1),
         }
     }
 
@@ -125,9 +128,9 @@ mod tests {
     #[test]
     fn test_face_normal() {
         let data = vec![
-            Vertex::new(0,0,0),
-            Vertex::new(1,0,0),
-            Vertex::new(0,1,0),
+            Vertex::new(0.0,0.0,0.0),
+            Vertex::new(1.0,0.0,0.0),
+            Vertex::new(0.0,1.0,0.0),
         ];
 
         let t = Face::new(1,2,3);

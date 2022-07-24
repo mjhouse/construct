@@ -12,7 +12,24 @@ pub struct Geometry {
 
 impl Geometry {
 
-    pub fn new(vertices: Vec<Vertex>, faces: Vec<Face>) -> Self {
+    pub fn make(values: Vec<f64>, indices: Vec<usize>) -> Self {
+
+        let vertices = values
+            .as_slice()
+            .chunks_exact(3)
+            .map(|k| Vertex::new(k[0],k[1],k[2]) )
+            .collect();
+
+        let faces = indices
+            .as_slice()
+            .chunks_exact(3)
+            .map(|k| Face::new(k[0],k[1],k[2]) )
+            .collect();
+
+        Self::new(vertices,faces)
+    }
+
+    pub const fn new(vertices: Vec<Vertex>, faces: Vec<Face>) -> Self {
         Self { vertices, faces }
     }
 
