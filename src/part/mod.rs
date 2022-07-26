@@ -9,3 +9,4 @@ pub use part::Part;
 // pub use attribute::Attribute;
 pub use connection::Connection;
 pub use metadata::Metadata;
+pub use alteration::Alteration;

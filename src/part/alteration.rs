@@ -8,6 +8,7 @@ use crate::geometry::{
 
 /// An Alteration will apply a matrix transformation 
 /// of the specified type to a set of points. 
+#[derive(Debug,Copy,Clone)]
 pub struct Alteration {
     magnitude: f64,        // the multiplier for the change
     dimension: Vector,     // the dimension of the change
