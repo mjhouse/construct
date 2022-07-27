@@ -64,6 +64,8 @@ I'll need to buy one of the books and read it to figure out how to turn it into 
 progresses, I'll have to acquire more. The rules should be in some external file format (not hard coded) so that you can swap them 
 out by year or state pretty easily.
 
+May be able to avoid buying books: https://up.codes/codes/tennessee
+
 ## Connection Solver
 
 TODO

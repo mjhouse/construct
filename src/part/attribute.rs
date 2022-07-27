@@ -51,27 +51,24 @@ impl Selection {
     }
 
     fn give_specific<T: Clone>(&self, indices: Vec<Index>, src: &Vec<T>, dest: &mut Vec<T>) {
-        let mut source = src.iter();
 
         // TODO: verify that all indices are less than max length
         // TODO: verify that indices.len() == src.len()
 
         for index in indices.into_iter() {
-            match source.next() {
-                Some(v) => dest[index] = v.clone(),
-                None => break,
-            };
+            dest[index] = src[index].clone();
         }
     }
 
     fn give_range<T: Clone>(&self, (start,end): (Index,Index), src: &Vec<T>, dest: &mut Vec<T>) {
-        let target = &mut dest[start..end];
-
         // TODO: verify that start is less than end
         // TODO: verify that end is less than max length
         // TODO: verify that end-start is equal to src length
 
-        for (i,item) in src.iter().enumerate() {
+        let target = &mut dest[start..end + 1];
+        let source = &src[start..end + 1];
+
+        for (i,item) in source.iter().enumerate() {
             target[i] = item.clone();
         }
     }
@@ -148,6 +145,29 @@ mod tests {
     }
 
     #[test]
+    fn test_selection_give_specific() {
+        let src = vec![
+            0, 1, 2, 3, 4, 
+            5, 6, 7, 8, 9
+        ];
+
+        let mut dest = vec![
+            9, 8, 7, 6, 5, 
+            4, 3, 2, 1, 0
+        ];
+
+        let select = Selection::specific([
+            0, 1, 5
+        ]); // give 1st, 2nd and 5th items
+
+        select.give(&src,&mut dest);
+
+        assert_eq!(dest[0],0);
+        assert_eq!(dest[1],1);
+        assert_eq!(dest[5],5);
+    }
+
+    #[test]
     fn test_selection_take_range() {
         let data = vec![
             9, 8, 7, 6, 5, 
@@ -167,6 +187,24 @@ mod tests {
     }
 
     #[test]
+    fn test_selection_give_range() {
+        let src = vec![
+            0, 1, 2, 3, 4, 
+            5, 6, 7, 8, 9
+        ];
+
+        let mut dest = vec![
+            9, 8, 7, 6, 5, 
+            4, 3, 2, 1, 0
+        ];
+
+        let select = Selection::range(0, 5);
+        select.give(&src,&mut dest);
+
+        assert_eq!(&src[0..6],&dest[0..6]);
+    }
+
+    #[test]
     fn test_selection_take_all() {
         let data = vec![
             9, 8, 7, 6, 5, 
@@ -176,6 +214,24 @@ mod tests {
         let select = Selection::all();
         let taken = select.take(&data);
         assert_eq!(taken,data);
+    }
+
+    #[test]
+    fn test_selection_give_all() {
+        let src = vec![
+            0, 1, 2, 3, 4, 
+            5, 6, 7, 8, 9
+        ];
+
+        let mut dest = vec![
+            9, 8, 7, 6, 5, 
+            4, 3, 2, 1, 0
+        ];
+
+        let select = Selection::all();
+        select.give(&src,&mut dest);
+        
+        assert_eq!(src,dest);
     }
 
 }
