@@ -41,8 +41,30 @@ impl Alteration {
         self
     }
 
-    pub fn update(&mut self, value: f64) {
+    pub fn scale(dimension: Vector) -> Self {
+        Self::new(MatrixType::Scale)
+            .with_dimension(dimension)
+            .build()
+    }
+
+    pub fn rotate(dimension: Vector) -> Self {
+        Self::new(MatrixType::Rotate)
+            .with_dimension(dimension)
+            .build()
+    }
+
+    pub fn translate(dimension: Vector) -> Self {
+        Self::new(MatrixType::Translate)
+            .with_dimension(dimension)
+            .build()
+    }
+
+    pub fn update_magnitude(&mut self, value: f64) {
         self.magnitude = value;
+    }
+
+    pub fn update_dimension(&mut self, value: Vector) {
+        self.dimension = value;
     }
 
     pub fn apply(&self, vertices: &mut Vec<Vertex>) {
@@ -54,6 +76,8 @@ impl Alteration {
             vector.y,
             vector.z,
         );
+
+        // dbg!(&matrix);
 
         for vertex in vertices.iter_mut() {
             vertex.transform(&matrix);

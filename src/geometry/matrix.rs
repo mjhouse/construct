@@ -1,9 +1,9 @@
 use crate::geometry::*;
-use std::ops::Mul;
+use std::{fmt,ops::Mul};
 
 type Data = [f64;16];
 
-#[derive(Default,Debug,Copy,Clone)]
+#[derive(Default,Copy,Clone)]
 pub struct Matrix {
     data: Data,
 }
@@ -13,6 +13,25 @@ pub enum MatrixType {
     Scale,
     Rotate,
     Translate,
+}
+
+impl fmt::Debug for Matrix {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
+        let [
+            m11, m12, m13, m14,
+            m21, m22, m23, m24,
+            m31, m32, m33, m34,
+            m41, m42, m43, m44
+        ] = self.unpack();
+
+        write!(f, "Matrix {{\n")?;
+        write!(f, "    {} {} {} {}\n",m11,m12,m13,m14);
+        write!(f, "    {} {} {} {}\n",m21,m22,m23,m24);
+        write!(f, "    {} {} {} {}\n",m31,m32,m33,m34);
+        write!(f, "    {} {} {} {}\n",m41,m42,m43,m44);
+        write!(f, "}}")
+    }
 }
 
 impl Matrix {
