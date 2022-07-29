@@ -6,7 +6,7 @@ use crate::geometry::*;
 
 #[derive(Default,Debug,Clone)]
 pub struct Geometry {
-    vertices:  Vec<Vertex>,
+    vertices: Vec<Vertex>,
     faces: Vec<Face>,
 }
 
@@ -49,6 +49,14 @@ impl Geometry {
             }
         }
         Ok(self)
+    }
+
+    pub fn vertices(&self) -> &Vec<Vertex> {
+        &self.vertices
+    }
+
+    pub fn vertices_mut(&mut self) -> &mut Vec<Vertex> {
+        &mut self.vertices
     }
 
 }
@@ -109,6 +117,12 @@ impl From<Geometry> for String {
         result.push_str("\n");
         result.push_str(&faces);
         result
+    }
+}
+
+impl Transform for Geometry {
+    fn transform(&mut self, matrix: &Matrix) {
+        self.vertices.transform(matrix);
     }
 }
 

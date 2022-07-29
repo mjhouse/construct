@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Sub,Mul};
+use std::ops::{Div,Sub,Mul};
 use std::convert::TryFrom;
 
 use crate::utilities;
@@ -16,6 +16,18 @@ pub struct Vector {
 
 pub type Vertex = Vector;
 pub type Normal = Vertex;
+
+impl Div<usize> for Vector {
+    type Output = Self;
+
+    fn div(self, other: usize) -> Self::Output {
+        Self {
+            x: self.x / other as f64,
+            y: self.y / other as f64,
+            z: self.z / other as f64,
+        }
+    }
+}
 
 impl Sub for Vector {
     type Output = Self;
@@ -79,6 +91,17 @@ impl Vector {
             v.z /= m;
         }
         v
+    }
+
+    pub fn distance(&self, other: &Vector) -> f64 {
+        let (x1,y1,z1) = self.unpack();
+        let (x2,y2,z2) = other.unpack();
+
+        let a = (x1-x2).powf(2.0);
+        let b = (y1-y2).powf(2.0);
+        let c = (z1-z2).powf(2.0);
+
+        (a + b + c).sqrt()
     }
 
     pub fn unpack(&self) -> (f64,f64,f64) {
@@ -152,6 +175,14 @@ impl Transform for Vector {
         self.x = dx / dw;
         self.y = dy / dw;
         self.z = dz / dw;
+    }
+}
+
+impl<T: Transform> Transform for Vec<T> {
+    fn transform(&mut self, matrix: &Matrix) {
+        for item in self.iter_mut() {
+            item.transform(matrix);
+        }
     }
 }
 

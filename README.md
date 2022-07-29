@@ -73,3 +73,8 @@ TODO
 ## Geometric Solver
 
 TODO
+
+# Notes
+
+* Use [egui](https://github.com/emilk/egui) for the user interface
+* USe [three-d](https://github.com/asny/three-d) for the 3D view

@@ -36,8 +36,6 @@ impl Alteration {
     }
 
     pub fn build(self) -> Self {
-        // verify that magnitude is non-zero
-        // verify that at least one dimension is non-zero
         self
     }
 
@@ -68,20 +66,21 @@ impl Alteration {
     }
 
     pub fn apply(&self, vertices: &mut Vec<Vertex>) {
+        let matrix = self.matrix();
+        for vertex in vertices.iter_mut() {
+            vertex.transform(&matrix);
+        }
+    }
+
+    pub fn matrix(&self) -> Matrix {
         let vector = self.dimension * self.magnitude;
 
-        let matrix = Matrix::matching(
+        Matrix::matching(
             self.operation,
             vector.x,
             vector.y,
             vector.z,
-        );
-
-        // dbg!(&matrix);
-
-        for vertex in vertices.iter_mut() {
-            vertex.transform(&matrix);
-        }
+        )
     }
 
 }

@@ -1,7 +1,7 @@
 use std::iter::zip;
 use log;
 
-use crate::geometry::{Matrix,Vector,Vertex,Transform};
+use crate::geometry::{Matrix,Vector,Vertex,Transform,Geometry};
 use crate::constant::Index;
 use crate::errors::Error;
 use crate::part::Alteration;
@@ -39,94 +39,82 @@ impl Selection {
         Self::All
     }
 
-    pub fn give<T: Clone>(&self, src: &Vec<T>, dest: &mut Vec<T>) {
+    pub fn apply(&self, alteration: &Alteration, vertices: &mut Vec<Vertex>) {
         match self.clone() {
-            Selection::Specific(v) => self.give_specific(v,src,dest),
-            Selection::Range(v) => self.give_range(v,src,dest),
-            Selection::All => self.give_all(src,dest)
+            Selection::Specific(v) => self.apply_specific(v,alteration,vertices),
+            Selection::Range(v) => self.apply_range(v,alteration,vertices),
+            Selection::All => self.apply_all(alteration,vertices)
         }
     }
 
-    pub fn take<T: Clone>(&self, data: &Vec<T>) -> Vec<T> {
+    fn apply_specific(&self, indices: Vec<Index>, alteration: &Alteration, vertices: &mut Vec<Vertex>) {
+        let matrix = alteration.matrix();
+        for index in indices.into_iter() {
+            vertices[index].transform(&matrix);
+        }
+    }
+
+    fn apply_range(&self, (start,end): (Index,Index), alteration: &Alteration, vertices: &mut Vec<Vertex>) {
+        let matrix = alteration.matrix();
+        for vertex in vertices[start..end].iter_mut() {
+            vertex.transform(&matrix);
+        }
+    }
+
+    fn apply_all(&self, alteration: &Alteration, vertices: &mut Vec<Vertex>) {
+        let matrix = alteration.matrix();
+        for vertex in vertices.iter_mut() {
+            vertex.transform(&matrix);
+        }
+    }
+
+    pub fn centroid(&self, vertices: &Vec<Vertex>) -> Vertex {
         match self.clone() {
-            Selection::Specific(v) => self.take_specific(v,data),
-            Selection::Range(v) => self.take_range(v,data),
-            Selection::All => self.take_all(data)
+            Selection::Specific(v) => self.centroid_specific(v,vertices),
+            Selection::Range(v) => self.centroid_range(v,vertices),
+            Selection::All => self.centroid_all(vertices)
         }
     }
 
-    /// Update specific indices from source
-    ///
-    /// # Errors
-    ///
-    /// Will panic if any of the given indives are out of bounds
-    /// for the destination.
-    fn give_specific<T: Clone>(&self, indices: Vec<Index>, src: &Vec<T>, dest: &mut Vec<T>) {
-        for (i,v) in zip(indices.into_iter(),src.iter()) {
-            dest[i] = v.clone();
+    fn centroid_specific(&self, indices: Vec<Index>, vertices: &Vec<Vertex>) -> Vertex {
+        let mut result = Vertex::new(0.0,0.0,0.0);
+        let length = indices.len();
+
+        for index in indices.into_iter() {
+            result.x += vertices[index].x;
+            result.y += vertices[index].y;
+            result.z += vertices[index].z;
         }
+
+        result / length
     }
 
+    fn centroid_range(&self, (start,end): (Index,Index), vertices: &Vec<Vertex>) -> Vertex {
+        let mut result = Vertex::new(0.0,0.0,0.0);
+        let mut count = 0;
 
-    /// Update a range of indices from source
-    ///
-    /// # Errors
-    ///
-    /// Will panic if the end is less than the start or 
-    /// the end is out of bounds for the destination.
-    fn give_range<T: Clone>(&self, (start,end): (Index,Index), src: &Vec<T>, dest: &mut Vec<T>) {
-        dest.splice(start..end, src
-            .iter()
-            .cloned());
+        for vertex in vertices[start..end].iter() {
+            result.x += vertex.x;
+            result.y += vertex.y;
+            result.z += vertex.z;
+            count += 1;
+        }
+
+        result / count
     }
 
+    fn centroid_all(&self, vertices: &Vec<Vertex>) -> Vertex {
+        let mut result = Vertex::new(0.0,0.0,0.0);
+        let mut count = 0;
 
-    /// Overwrite the destination from the source
-    ///
-    /// # Errors
-    ///
-    /// N/A
-    fn give_all<T: Clone>(&self, src: &Vec<T>, dest: &mut Vec<T>) {
-        dest.splice(.., src
-            .iter()
-            .cloned());
-    }
+        for vertex in vertices.iter() {
+            result.x += vertex.x;
+            result.y += vertex.y;
+            result.z += vertex.z;
+            count += 1;
+        }
 
-
-    /// Take specific indices from the data
-    ///
-    /// # Errors
-    ///
-    /// Will panic if a given index is out of bounds
-    /// for data.
-    fn take_specific<T: Clone>(&self, indices: Vec<Index>, data: &Vec<T>) -> Vec<T> {
-        indices
-            .into_iter()
-            .map(|i| data[i].clone())
-            .collect()
-    }
-
-
-    /// Take a range of elements from the data
-    ///
-    /// # Errors
-    ///
-    /// Will panic if the end is less than start or 
-    /// the end is out of bounds for data.
-    fn take_range<T: Clone>(&self, (start,end): (Index,Index), data: &Vec<T>) -> Vec<T> {
-        data[start..end]
-            .iter()
-            .cloned()
-            .collect()
-    }
-
-    /// Take all elements from the given data
-    ///
-    /// # Errors
-    ///
-    /// N/A
-    fn take_all<T: Clone>(&self, data: &Vec<T>) -> Vec<T> {
-        data.clone()
+        result / count
     }
 
 }
@@ -209,20 +197,43 @@ impl AttributeItem {
     }
 
     pub fn apply(&self, vertices: &mut Vec<Vertex>) {
-        // take selection
-        let mut points = self.selection.take(vertices);
+        self.selection.apply(&self.alteration,vertices);
+    }
 
-        // transform selection
-        self.alteration.apply(&mut points);
-
-        // return selection
-        self.selection.give(&points,vertices);
+    pub fn centroid(&self, geometry: &Geometry) -> Vertex {
+        self.selection.centroid(geometry.vertices())
     }
 
 }
 
 impl Attribute {
     
+    pub fn new(name: String, items: Vec<AttributeItem>) -> Self {
+        Self { name, items }
+    }
+
+    pub fn update(&mut self, value: f64) {
+        for item in self.items.iter_mut() {
+            item.update_magnitude(value);
+        }
+    }
+
+    pub fn apply(&self, vertices: &mut Vec<Vertex>) {
+        for item in self.items.iter() {
+            item.apply(vertices);
+        }
+    }
+
+    pub fn revise(&self, geometry: &mut Geometry) {
+        let vertices = geometry.vertices_mut();
+        self.apply(vertices);
+    }
+
+    pub fn distance(&self, geometry: &Geometry, start: usize, end: usize) -> f64 {
+        let a = self.items[start].centroid(geometry);
+        let b = self.items[end].centroid(geometry);
+        a.distance(&b)
+    }
 }
 
 #[cfg(test)]
@@ -235,155 +246,6 @@ mod tests {
         ( $v: expr, $e: expr ) => {
             assert_relative_eq!($v,$e, epsilon = f64::EPSILON);
         }
-    }
-
-    #[test]
-    fn test_selection_take_specific() {
-        let data = vec![
-            9, 8, 7, 6, 5, 
-            4, 3, 2, 1, 0
-        ];
-
-        let select = Selection::specific([
-            0, 1, 5
-        ]); // take 1st, 2nd and 5th items
-
-        let taken = select.take(&data);
-
-        assert_eq!(taken.len(),3);
-        assert_eq!(taken[0],9);
-        assert_eq!(taken[1],8);
-        assert_eq!(taken[2],4);
-    }
-
-    #[test]
-    fn test_selection_give_specific_start() {
-        let src = vec![
-            0, 1, 2, 3, 4
-        ];
-
-        let mut dest = vec![
-            9, 8, 7, 6, 5, 
-            4, 3, 2, 1, 0
-        ];
-
-        let select = Selection::specific([0,1,2,3,4]);
-        select.give(&src,&mut dest);
-
-        assert_eq!(&src[0..5],&dest[0..5]);
-    }
-
-    #[test]
-    fn test_selection_give_specific_end() {
-        let src = vec![
-            0, 1, 2, 3, 4
-        ];
-
-        let mut dest = vec![
-            9, 8, 7, 6, 5, 
-            4, 3, 2, 1, 0
-        ];
-
-        let select = Selection::specific([5,6,7,8,9]);
-        select.give(&src,&mut dest);
-
-        assert_eq!(&src[0..5],&dest[5..10]);
-    }
-
-    #[test]
-    fn test_selection_take_range_start() {
-        let data = vec![
-            9, 8, 7, 6, 5, 
-            4, 3, 2, 1, 0
-        ];
-
-        let select = Selection::range(0, 3);
-        let taken = select.take(&data);
-
-        assert_eq!(taken.len(),3);
-        assert_eq!(taken[0],9);
-        assert_eq!(taken[1],8);
-        assert_eq!(taken[2],7);
-    }
-
-    #[test]
-    fn test_selection_take_range_end() {
-        let data = vec![
-            9, 8, 7, 6, 5, 
-            4, 3, 2, 1, 0
-        ];
-
-        let select = Selection::range(7, 10);
-        let taken = select.take(&data);
-
-        assert_eq!(taken.len(),3);
-        assert_eq!(taken[0],2);
-        assert_eq!(taken[1],1);
-        assert_eq!(taken[2],0);
-    }
-
-    #[test]
-    fn test_selection_give_range_start() {
-        let src = vec![
-            0, 1, 2, 3, 4
-        ];
-
-        let mut dest = vec![
-            9, 8, 7, 6, 5, 
-            4, 3, 2, 1, 0
-        ];
-
-        let select = Selection::range(0, 5);
-        select.give(&src,&mut dest);
-
-        assert_eq!(&src[0..5],&dest[0..5]);
-    }
-
-    #[test]
-    fn test_selection_give_range_end() {
-        let src = vec![
-            0, 1, 2, 3, 4
-        ];
-
-        let mut dest = vec![
-            9, 8, 7, 6, 5, 
-            4, 3, 2, 1, 0
-        ];
-
-        let select = Selection::range(5, 10);
-        select.give(&src,&mut dest);
-
-        assert_eq!(&src[0..5],&dest[5..10]);
-    }
-
-    #[test]
-    fn test_selection_take_all() {
-        let data = vec![
-            9, 8, 7, 6, 5, 
-            4, 3, 2, 1, 0
-        ];
-
-        let select = Selection::all();
-        let taken = select.take(&data);
-        assert_eq!(taken,data);
-    }
-
-    #[test]
-    fn test_selection_give_all() {
-        let src = vec![
-            0, 1, 2, 3, 4, 
-            5, 6, 7, 8, 9
-        ];
-
-        let mut dest = vec![
-            9, 8, 7, 6, 5, 
-            4, 3, 2, 1, 0
-        ];
-
-        let select = Selection::all();
-        select.give(&src,&mut dest);
-        
-        assert_eq!(src,dest);
     }
 
     #[test]
